@@ -1,5 +1,7 @@
 import faiss
 import numpy as np
+from app.rag.chunker import chunk_text
+from app.rag.embeddings import create_embeddings
 class Retriever:
     def __init__(self, chunks, embeddings):
         self.chunks = chunks
@@ -12,3 +14,8 @@ class Retriever:
         for index in indices[0]:
             results.append(self.chunks[index])
         return results
+def build_retreiver(text):
+    chunks = chunk_text(text)
+    # convert chunks to embeddings
+    embeddings = create_embeddings(chunks)
+    return Retriever(chunks,embeddings)
