@@ -1,6 +1,6 @@
 from fastapi import UploadFile
 from pypdf import PdfReader
-from retriever import Retriever
+from app.rag.retriever import Retriever
 documents = {}
 
 def store_document(document_id: str, file: UploadFile, reader: PdfReader, text: str, retreiver:Retriever):

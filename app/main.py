@@ -3,15 +3,15 @@ from pypdf import PdfReader
 from fastapi import FastAPI
 from dotenv import load_dotenv
 from fastapi import HTTPException
-from llm import ask_llm
+from app.services.llm import ask_llm
 import uuid
-from pdf_parser import parser
-from prompts import structured_prompt
-from schemas import AskPdf
-from database import store_document,get_document,get_history,format_history,store_history
-from chunker import chunk_text
-from embeddings import create_embeddings,create_embedding
-from retriever import Retriever
+from app.services.pdf_parser import parser
+from app.core.prompts import structured_prompt
+from app.models.schemas import AskPdf
+from app.db.database import *
+from app.rag.chunker import chunk_text
+from app.rag.embeddings import create_embeddings,create_embedding
+from app.rag.retriever import Retriever
 # Load environment variables
 load_dotenv()
 # FastAPI app
