@@ -58,7 +58,7 @@ async def ask_pdf(data: AskPdf):
             detail="Document not found."
     )
     text = document["text"]
-    retriever= build_retreiver(text)
+    retriever= build_retreiver(document_id,text)
     retreived_chunks = retriever.retrieve(question_embedding)
     history = database.get_history(document_id)
     history_text = database.format_history(history)
