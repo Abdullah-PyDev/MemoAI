@@ -5,5 +5,12 @@
 __pycache__/
 *.pyc
 
-resume.pdf
+#database
 memoai.db
+# Cached RAG data
+# Cached RAG data
+storage/
+#testing files
+cache_testing.py
+#aerchive
+archive/

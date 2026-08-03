@@ -3,6 +3,7 @@ from pypdf import PdfReader
 from fastapi import FastAPI
 from dotenv import load_dotenv
 from fastapi import HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from app.services.llm import ask_llm
 import uuid
 from app.services.pdf_parser import parser
@@ -19,6 +20,15 @@ app = FastAPI(
     title="Ask Anything AI",
     description="A simple AI-powered API using Gemini",
     version="1.0"
+)
+
+# Development CORS: allow requests from other local/dev origins (adjust for production)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Home route
@@ -38,6 +48,7 @@ def help():
 
 @app.post("/upload")
 async def upload_pdf(file: UploadFile = File(...)):
+    print("Uploading...")
     reader = PdfReader(file.file)
     text = parser(reader)
     # generating uid
