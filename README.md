@@ -1,4 +1,12 @@
-# 📄 MemoAI
+# MemoAI
+
+## Architecture
+
+![MemoAI Architecture](assets/architecture.png)
+
+
+
+# MemoAI
 
 An AI-powered PDF Assistant built with FastAPI, Streamlit, RAG (Retrieval-Augmented Generation), FAISS, Sentence Transformers, and the Groq API.
 
