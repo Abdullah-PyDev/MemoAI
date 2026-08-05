@@ -1,12 +1,11 @@
 from fastapi import UploadFile, File
-from pypdf import PdfReader
 from fastapi import FastAPI
 from dotenv import load_dotenv
 from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.services.llm import ask_llm
 import uuid
-from app.services.pdf_parser import parser
+from app.services.pdf_parser import PdfParser
 from app.core.prompts import structured_prompt
 from app.models.schemas import AskPdf
 from app.rag.embeddings import create_embedding
@@ -45,15 +44,30 @@ def help():
         "docs": "/docs"
     }
 
+parser = PdfParser()
 
 @app.post("/upload")
 async def upload_pdf(file: UploadFile = File(...)):
-    print("Uploading...")
-    reader = PdfReader(file.file)
-    text = parser(reader)
-    # generating uid
+
+    pdf_bytes = await file.read()
+
+    document = parser.parse_pdf(pdf_bytes)
+
+    text = ""
+
+    for page in document.pages:
+        for block in page.blocks:
+            text += block.text + "\n"
+
     document_id = str(uuid.uuid4())
-    database.store_document(document_id,file.filename,len(reader.pages),text)
+
+    database.store_document(
+        document_id,
+        file.filename,
+        len(document.pages),
+        text
+    )
+
     return {
         "document_id": document_id
     }
