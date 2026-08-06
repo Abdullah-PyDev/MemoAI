@@ -16,7 +16,7 @@ class Retriever:
         return results
 def build_retreiver(document_id,text):
     folder = get_document_folder(document_id)
-    chunks_file = (folder/"chunk.pkl").exists()
+    chunks_file = (folder/"chunks.pkl").exists()
     index_file = (folder/"faiss.index").exists()
     if chunks_file and index_file:
         chunks = load_chunks(document_id)
