@@ -1,17 +1,14 @@
 import axios from 'axios';
 import { UploadResponse, AskPDFResponse } from '../types';
 
-const defaultBase = (typeof window !== 'undefined')
-  ? `${window.location.protocol}//${window.location.hostname}:8000`
-  : 'http://127.0.0.1:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-const API_BASE_URL =
-  (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_URL ||
-  defaultBase;
-
+if (!API_BASE_URL) {
+  throw new Error("VITE_API_URL is not defined. Check your frontend/.env file.");
+}
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 300000,
   headers: {
     'Content-Type': 'application/json',
   },
