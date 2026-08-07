@@ -11,6 +11,8 @@ from app.models.schemas import AskPdf
 from app.rag.embeddings import create_embedding
 from app.rag.retriever import build_retreiver
 from app.db.db import Database
+from app.rag.cache import save_document,load_document
+
 # Load environment variables
 database = Database()
 load_dotenv()
@@ -48,26 +50,24 @@ parser = PdfParser()
 
 @app.post("/upload")
 async def upload_pdf(file: UploadFile = File(...)):
-
+    
     pdf_bytes = await file.read()
 
     document = parser.parse_pdf(pdf_bytes)
 
     text = ""
-
+    
     for page in document.pages:
         for block in page.blocks:
             text += block.text + "\n"
-
     document_id = str(uuid.uuid4())
-
     database.store_document(
         document_id,
         file.filename,
         len(document.pages),
         text
     )
-
+    save_document(document_id,document)
     return {
         "document_id": document_id
     }
@@ -77,13 +77,14 @@ async def ask_pdf(data: AskPdf):
     question = data.question
     question_embedding = create_embedding(question)
     document = database.get_document(document_id)
+    doc = load_document(document_id)
     if document is None:
         raise HTTPException(
             status_code=404,
             detail="Document not found."
     )
-    text = document["text"]
-    retriever= build_retreiver(document_id,text)
+    
+    retriever= build_retreiver(document_id,doc)
     retreived_chunks = retriever.retrieve(question_embedding)
     history = database.get_history(document_id)
     history_text = database.format_history(history)

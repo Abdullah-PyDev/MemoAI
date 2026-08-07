@@ -7,6 +7,9 @@ class Block:
     text: str
     page: int
     bbox: tuple | None = None
+    font_size: float | None = None
+    font_name: str | None = None
+    is_bold: bool = False
 
 
 @dataclass

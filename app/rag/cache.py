@@ -1,6 +1,7 @@
 from pathlib import Path
 import pickle
 import faiss
+from app.models.document import Document
 #storage directory where we will save cached chunks and embeddings
 STORAGE_DIR = Path("storage")
 
@@ -21,12 +22,23 @@ def save_chunks(document_id,chunks):
     if folder:
         with open(folder/"chunks.pkl",'wb') as file:
             pickle.dump(chunks,file)
+def save_document(document_id,document:Document):
+    folder = get_document_folder(document_id)
+    if folder:
+        with open(folder/"document.pkl",'wb') as file:
+            pickle.dump(document,file)
 def load_chunks(document_id):
     folder = get_document_folder(document_id)
     if folder:
         with open(folder/"chunks.pkl",'rb') as file:
             chunks = pickle.load(file)
     return chunks
+def load_document(document_id):
+    folder = get_document_folder(document_id)
+    if folder:
+        with open(folder/"document.pkl",'rb') as file:
+            document = pickle.load(file)
+    return document
 def save_index(document_id,index):
     folder = get_document_folder(document_id)
     path = str(folder/"faiss.index")
