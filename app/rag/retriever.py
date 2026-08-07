@@ -3,6 +3,7 @@ import numpy as np
 from app.rag.chunker import chunk_text
 from app.rag.embeddings import create_embeddings
 from app.rag.cache import get_document_folder,load_chunks,save_chunks,save_index,read_index
+from app.models.document import Document
 class Retriever:
     def __init__(self, chunks, index):
         self.chunks = chunks
@@ -14,7 +15,7 @@ class Retriever:
         for index in indices[0]:
             results.append(self.chunks[index])
         return results
-def build_retreiver(document_id,text):
+def build_retreiver(document_id,document:Document):
     folder = get_document_folder(document_id)
     chunks_file = (folder/"chunks.pkl").exists()
     index_file = (folder/"faiss.index").exists()
@@ -23,7 +24,7 @@ def build_retreiver(document_id,text):
         index = read_index(document_id)
         return Retriever(chunks,index)
     
-    chunks = chunk_text(text)
+    chunks = chunk_text(document)
     save_chunks(document_id,chunks)
     embeddings = create_embeddings(chunks)
     dimension = embeddings.shape[1]
