@@ -97,12 +97,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               className="flex-1 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none resize-none max-h-36 py-1 font-sans leading-relaxed"
             />
 
-            {/* Voice Button (Disabled placeholder) */}
+            {/* Voice Button placeholder */}
             <button
               type="button"
-              disabled
-              title="Voice (Not Available)"
-              className="p-2 text-gray-300 cursor-not-allowed hover:bg-transparent shrink-0"
+              title="Voice input coming soon"
+              className="p-2 text-gray-600 hover:text-black hover:bg-gray-100 rounded-full cursor-pointer transition-colors shrink-0"
             >
               <Mic className="w-5 h-5" />
             </button>
