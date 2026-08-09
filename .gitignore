@@ -14,3 +14,12 @@ storage/
 cache_testing.py
 #aerchive
 archive/
+docs/
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
