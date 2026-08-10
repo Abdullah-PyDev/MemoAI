@@ -8,201 +8,214 @@
 
 # MemoAI
 
-An AI-powered PDF Assistant built with FastAPI, Streamlit, RAG (Retrieval-Augmented Generation), FAISS, Sentence Transformers, and the Groq API.
+AI-powered research assistant for interacting with PDF documents using Retrieval-Augmented Generation (RAG).
 
-Upload any PDF and ask natural language questions. MemoAI retrieves the most relevant sections of the document using semantic search before generating an accurate answer with an LLM.
+MemoAI allows users to upload research papers and ask questions about them using natural language. It retrieves relevant sections from the document and uses an LLM to generate grounded answers.
 
----
+## Features
 
-## ✨ Features
+- PDF document upload and processing
+- Structured PDF text extraction (with OCR fallback)
+- Intelligent document chunking
+- Semantic embeddings
+- Vector-based retrieval
+- Retrieval-Augmented Generation (RAG)
+- Conversational chat with document context
+- Voice input for English queries
+- Speech-to-text using Whisper through Groq
+- FastAPI backend
+- React frontend
 
-- 📄 Upload PDF documents
-- 💬 Ask questions about uploaded PDFs
-- 🧠 Retrieval-Augmented Generation (RAG)
-- 🔍 Semantic search using Sentence Transformers
-- ⚡ Fast vector similarity search with FAISS
-- 🤖 AI responses powered by Groq
-- 🌐 FastAPI backend
-- 🎨 Streamlit frontend
-- 💭 Conversation history support
+## Voice Input
 
----
+MemoAI supports voice-based queries.
 
-## 🛠 Tech Stack
+The flow is:
 
+```
+Browser microphone
+  → Audio recording
+  → FastAPI /transcribe
+  → Whisper large-v3-turbo via Groq
+  → Transcribed text
+  → Existing RAG pipeline
+  → Answer
+```
+
+Voice input does not require any changes to the existing RAG pipeline. The audio is simply converted into text before being processed as a normal query.
+
+### Voice Benchmark
+
+We initially tested running Whisper locally using `faster-whisper`.
+
+**Model tested:** `Whisper large-v3-turbo`
+
+The local approach worked, but running the model directly on CPU introduced several problems:
+
+- Large model download (~1.6 GB)
+- Model loading/startup overhead
+- Relatively slow CPU transcription
+- Windows/Hugging Face cache and symlink issues
+- Higher local resource requirements
+
+We then tested Whisper through Groq's API.
+
+For a 27-second English recording:
+
+| Approach | Result |
+|---|---:|
+| Local Whisper on CPU | ~19–35 seconds |
+| Groq Whisper API | ~5.7 seconds |
+
+The Groq-based approach provided significantly better latency for MemoAI's current architecture.
+
+## Architecture
+
+```
+                    ┌──────────────────────┐
+                    │  React + TypeScript  │
+                    │       Frontend       │
+                    └──────────┬───────────┘
+                               │
+                    ┌──────────▼───────────┐
+                    │        FastAPI       │
+                    │        Backend       │
+                    └──────────┬───────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              │                │                 │
+              ▼                ▼                 ▼
+        PDF Processing        RAG          Speech-to-Text
+              │                │                 │
+          PyMuPDF          Embeddings           Groq
+          RapidOCR           FAISS            Whisper
+              │                │                 │
+              └────────────────┼─────────────────┘
+                               │
+                               ▼
+                          Groq LLM
+                       Llama 3.3 70B
+                               │
+                               ▼
+                            Answer
+```
+
+### RAG Pipeline
+
+```
+PDF → PDF Parsing → Text Extraction → Chunking → Embeddings
+    → Vector Retrieval → Relevant Context → LLM → Answer
+```
+
+### Voice Query Pipeline
+
+```
+Voice → Whisper → Text → RAG Pipeline → Answer
+```
+
+## Tech Stack
+
+### Frontend
+- React
+- TypeScript
+- Tailwind CSS
+- Lucide React
+
+### Backend
 - Python
 - FastAPI
-- Streamlit
-- Groq API
-- Sentence Transformers
-- FAISS
-- PyPDF
+- Uvicorn
 - Pydantic
-- NumPy
 
----
+### Document Processing
+- PyMuPDF (fitz)
+- RapidOCR
+- Custom document/block/page models
+- Custom chunking pipeline
 
-## 📁 Project Structure
+### RAG
+- Sentence Transformers
+- `all-MiniLM-L6-v2`
+- FAISS
+- Custom semantic retrieval pipeline
 
-```
-MemoAI/
-│
-├── app/
-│   ├── core/
-│   ├── db/
-│   ├── models/
-│   ├── rag/
-│   ├── services/
-│   └── main.py
-│
-├── frontend/
-│   └── app.py
-│
-├── tests/
-│
-├── requirements.txt
-├── .env
-├── .gitignore
-└── README.md
-```
+### AI / LLM
+- Groq API
+- Llama 3.3 70B Versatile
+- Whisper large-v3-turbo via Groq (speech-to-text)
 
----
+### Storage
+- SQLite
+- File-based document/chunk storage
 
-# Installation
+### Development & Tools
+- Git
+- GitHub
+- VS Code
+- Python virtual environments
 
-## 1. Clone the repository
+### Core Technologies Overview
 
-```bash
-git clone https://github.com/YOUR_USERNAME/MemoAI.git
-cd MemoAI
-```
+| Component | Technology |
+|---|---|
+| Frontend | React + TypeScript |
+| Styling | Tailwind CSS |
+| Backend | FastAPI |
+| PDF Parsing | PyMuPDF |
+| OCR | RapidOCR |
+| Embeddings | all-MiniLM-L6-v2 |
+| Vector Search | FAISS |
+| LLM | Llama 3.3 70B Versatile |
+| Speech-to-Text | Whisper large-v3-turbo |
+| AI API | Groq |
+| Database | SQLite |
+| Version Control | Git + GitHub |
 
----
+## API
 
-## 2. Create a virtual environment
+### `POST /upload`
+Uploads and processes a PDF document.
 
-Windows
+### `POST /ask`
+Accepts a question and generates an answer using the document's retrieved context.
 
-```bash
-python -m venv .venv
-```
+### `POST /transcribe`
+Accepts an audio file and returns its transcription.
 
-Activate it
+**Example response:**
 
-Command Prompt
-
-```bash
-.venv\Scripts\activate
-```
-
-PowerShell
-
-```powershell
-.venv\Scripts\Activate.ps1
-```
-
----
-
-## 3. Install dependencies
-
-```bash
-pip install -r requirements.txt
+```json
+{
+  "text": "What methodology was used in this research paper?",
+  "transcription_time": 5.7
+}
 ```
 
----
+## Current Status
 
-## 4. Create a `.env` file
+MemoAI currently supports:
 
-Inside the project root create a file named
+- PDF-based question answering
+- RAG-based document retrieval
+- Conversational interaction
+- English voice queries
+- Fast speech-to-text through Groq
 
-```
-.env
-```
+## Upcoming
 
-Add your Groq API key
+- Production deployment
+- Improved voice UX
+- Voice recording cancellation
+- Better error handling
+- Multilingual voice input
+- RAG evaluation and benchmarking
+- Improved document processing and retrieval
 
-```env
-GROQ_API_KEY=your_api_key_here
-```
+## Project Goal
 
----
+MemoAI is being developed as an AI research assistant focused on making research papers easier to understand, explore, and interact with.
 
-## 5. Start the FastAPI backend
-
-```bash
-uvicorn app.main:app --reload
-```
-
-Backend will run at
-
-```
-http://127.0.0.1:8000
-```
-
-API documentation
-
-```
-http://127.0.0.1:8000/docs
-```
-
----
-
-## 6. Start the Streamlit frontend
-
-Open a new terminal and run
-
-```bash
-streamlit run frontend/app.py
-```
-
-The application will open automatically in your browser.
-
----
-
-# How it Works
-
-```
-PDF Upload
-      │
-      ▼
-Extract Text
-      │
-      ▼
-Character Overlap Chunking
-      │
-      ▼
-Sentence Transformer Embeddings
-      │
-      ▼
-FAISS Vector Index
-      │
-      ▼
-Semantic Retrieval
-      │
-      ▼
-Prompt Construction
-      │
-      ▼
-Groq LLM
-      │
-      ▼
-AI Response
-```
-
----
-
-## Future Improvements
-
-- SQLite database
-- Persistent vector database (ChromaDB)
-- Multi-document support
-- Source citations
-- OCR for scanned PDFs
-- Hybrid search (BM25 + Vector Search)
-- Docker deployment
-- Authentication
-
----
+The project is also being developed as a practical exploration of modern AI engineering concepts including RAG, embeddings, vector retrieval, LLMs, speech-to-text, evaluation, and AI application architecture.
 
 ## Author
 
