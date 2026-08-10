@@ -18,7 +18,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onUploadClick,
 }) => {
   const [input, setInput] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -42,6 +46,75 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     setInput(e.target.value);
     e.target.style.height = 'auto';
     e.target.style.height = `${Math.min(e.target.scrollHeight, 140)}px`;
+  };
+  const startRecording = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+    });
+
+    const mediaRecorder = new MediaRecorder(stream);
+
+    audioChunksRef.current = [];
+
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        audioChunksRef.current.push(event.data);
+      }
+    };
+
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(audioChunksRef.current, {
+        type: 'audio/webm',
+      });
+
+      stream.getTracks().forEach((track) => track.stop());
+
+      await transcribeAudio(audioBlob);
+    };
+
+    mediaRecorderRef.current = mediaRecorder;
+    mediaRecorder.start();
+
+    setIsRecording(true);
+  };
+  const stopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+  const transcribeAudio = async (audioBlob: Blob) => {
+    setIsTranscribing(true);
+
+    try {
+      const formData = new FormData();
+
+      formData.append(
+        'file',
+        audioBlob,
+        'recording.webm'
+      );
+
+      const response = await fetch(
+        'http://localhost:8000/transcribe',
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Transcription failed');
+      }
+
+      const data = await response.json();
+
+      setInput(data.text);
+    } catch (error) {
+      console.error('Transcription error:', error);
+    } finally {
+      setIsTranscribing(false);
+    }
   };
 
   const suggestions = [
@@ -97,13 +170,38 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               className="flex-1 bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none resize-none max-h-36 py-1 font-sans leading-relaxed"
             />
 
-            {/* Voice Button placeholder */}
+            {/* Voice Input Button */}
             <button
               type="button"
-              title="Voice input coming soon"
-              className="p-2 text-gray-600 hover:text-black hover:bg-gray-100 rounded-full cursor-pointer transition-colors shrink-0"
+              onClick={isRecording ? stopRecording : startRecording}
+              disabled={
+                isTranscribing ||
+                disabled ||
+                isLoading ||
+                !document
+              }
+              title={
+                isRecording
+                  ? "Stop recording"
+                  : isTranscribing
+                  ? "Transcribing..."
+                  : "Voice input"
+              }
+              className={`p-2 rounded-full transition-all shrink-0 ${
+                isRecording
+                  ? "bg-red-100 text-red-600 hover:bg-red-200 cursor-pointer"
+                  : isTranscribing
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-gray-600 hover:text-black hover:bg-gray-100 cursor-pointer"
+              }`}
             >
-              <Mic className="w-5 h-5" />
+              {isTranscribing ? (
+                <span className="block w-5 h-5 text-xs font-medium">
+                  ...
+                </span>
+              ) : (
+                <Mic className="w-5 h-5" />
+              )}
             </button>
 
             {/* Send Button */}
