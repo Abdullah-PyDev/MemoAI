@@ -29,3 +29,4 @@ class PdfParser:
             document.pages.append(page)
         return document
     
+parser = PdfParser()

@@ -104,3 +104,4 @@ class Database:
             history_text += f"Assistant: {chat['answer']}\n\n"
 
         return history_text
+database = Database()
