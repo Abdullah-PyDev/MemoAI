@@ -1,6 +1,7 @@
-import React, { useState, KeyboardEvent, useRef, useEffect } from 'react';
-import { Send, Mic, Sparkles, FileUp } from 'lucide-react';
+import React, { useState, KeyboardEvent, useRef } from 'react';
+import { Send, Mic, Sparkles } from 'lucide-react';
 import { DocumentInfo } from '../../types';
+import { transcribeAudio } from '../../services/speechService';
 
 interface ChatInputProps {
   onSendMessage: (text: string) => void;
@@ -20,6 +21,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [input, setInput] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [microphoneError, setMicrophoneError] = useState('');
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -30,6 +33,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
     onSendMessage(input.trim());
     setInput('');
+
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
@@ -42,80 +46,90 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
-  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleTextareaChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>
+  ) => {
     setInput(e.target.value);
     e.target.style.height = 'auto';
     e.target.style.height = `${Math.min(e.target.scrollHeight, 140)}px`;
   };
+
   const startRecording = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-    });
+    // Clear previous microphone error
+    setMicrophoneError('');
 
-    const mediaRecorder = new MediaRecorder(stream);
+    // Make sure we are not in recording/transcribing state
+    setIsRecording(false);
+    setIsTranscribing(false);
 
-    audioChunksRef.current = [];
-
-    mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        audioChunksRef.current.push(event.data);
-      }
-    };
-
-    mediaRecorder.onstop = async () => {
-      const audioBlob = new Blob(audioChunksRef.current, {
-        type: 'audio/webm',
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
       });
 
-      stream.getTracks().forEach((track) => track.stop());
+      const mediaRecorder = new MediaRecorder(stream);
 
-      await transcribeAudio(audioBlob);
-    };
+      audioChunksRef.current = [];
 
-    mediaRecorderRef.current = mediaRecorder;
-    mediaRecorder.start();
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
 
-    setIsRecording(true);
+      mediaRecorder.onstop = async () => {
+  const audioBlob = new Blob(audioChunksRef.current, {
+    type: 'audio/webm',
+  });
+
+  stream.getTracks().forEach((track) => track.stop());
+
+  setIsTranscribing(true);
+
+  try {
+    const text = await transcribeAudio(audioBlob);
+    setInput(text);
+  } catch (error) {
+    console.error('Transcription error:', error);
+  } finally {
+    setIsTranscribing(false);
+  }
+};
+
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.start();
+
+      setIsRecording(true);
+    } catch (error) {
+      // Permission/access failed
+      setIsRecording(false);
+      setIsTranscribing(false);
+
+      if (
+        error instanceof DOMException &&
+        error.name === 'NotAllowedError'
+      ) {
+        setMicrophoneError(
+          'Microphone access was denied. Please allow microphone access in your browser settings to use voice input.'
+        );
+      } else {
+        setMicrophoneError(
+          'Unable to access the microphone. Please check your browser settings and try again.'
+        );
+      }
+
+      console.error('Microphone access error:', error);
+    }
   };
+
   const stopRecording = () => {
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
     }
   };
-  const transcribeAudio = async (audioBlob: Blob) => {
-    setIsTranscribing(true);
 
-    try {
-      const formData = new FormData();
-
-      formData.append(
-        'file',
-        audioBlob,
-        'recording.webm'
-      );
-
-      const response = await fetch(
-        'http://localhost:8000/transcribe',
-        {
-          method: 'POST',
-          body: formData,
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Transcription failed');
-      }
-
-      const data = await response.json();
-
-      setInput(data.text);
-    } catch (error) {
-      console.error('Transcription error:', error);
-    } finally {
-      setIsTranscribing(false);
-    }
-  };
+  
 
   const suggestions = [
     'Summarize this PDF',
@@ -126,13 +140,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   return (
     <div className="p-4 sm:p-6 bg-gradient-to-t from-white via-white to-transparent shrink-0">
       <div className="max-w-3xl mx-auto w-full flex flex-col gap-2">
-        {/* Quick Suggestion Chips if document exists and input is empty */}
+
+        {/* Quick Suggestion Chips */}
         {document && !input && !isLoading && (
           <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
             <span className="text-[10px] font-semibold uppercase text-gray-400 shrink-0 flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-gray-400" />
               Quick Ask:
             </span>
+
             {suggestions.map((sug) => (
               <button
                 key={sug}
@@ -146,8 +162,18 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </div>
         )}
 
-        {/* Input Form Box */}
-        <form onSubmit={handleSubmit} className="relative flex items-center w-full">
+        {/* Microphone Error Message */}
+        {microphoneError && (
+          <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            {microphoneError}
+          </div>
+        )}
+
+        {/* Input Form */}
+        <form
+          onSubmit={handleSubmit}
+          className="relative flex items-center w-full"
+        >
           <div
             className={`flex-1 flex items-center gap-2 bg-white border rounded-2xl px-4 py-3 shadow-lg transition-all ${
               !document
@@ -182,17 +208,17 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               }
               title={
                 isRecording
-                  ? "Stop recording"
+                  ? 'Stop recording'
                   : isTranscribing
-                  ? "Transcribing..."
-                  : "Voice input"
+                  ? 'Transcribing...'
+                  : 'Voice input'
               }
               className={`p-2 rounded-full transition-all shrink-0 ${
                 isRecording
-                  ? "bg-red-100 text-red-600 hover:bg-red-200 cursor-pointer"
+                  ? 'bg-red-100 text-red-600 hover:bg-red-200 cursor-pointer'
                   : isTranscribing
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-gray-600 hover:text-black hover:bg-gray-100 cursor-pointer"
+                  ? 'text-gray-400 cursor-not-allowed'
+                  : 'text-gray-600 hover:text-black hover:bg-gray-100 cursor-pointer'
               }`}
             >
               {isTranscribing ? (
@@ -207,7 +233,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             {/* Send Button */}
             <button
               type="submit"
-              disabled={!input.trim() || disabled || isLoading || !document}
+              disabled={
+                !input.trim() ||
+                disabled ||
+                isLoading ||
+                !document
+              }
               className={`p-2.5 rounded-xl transition-all flex items-center justify-center shrink-0 ${
                 input.trim() && document && !isLoading
                   ? 'bg-black text-white shadow-md hover:scale-105 active:scale-95 cursor-pointer'
@@ -220,7 +251,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </form>
 
         <p className="text-[11px] text-gray-400 text-center mt-1">
-          AI can make mistakes. Verify important information against the document source.
+          AI can make mistakes. Verify important information against the
+          document source.
         </p>
       </div>
     </div>
