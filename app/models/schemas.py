@@ -2,6 +2,6 @@ from pydantic import BaseModel
 class Question(BaseModel):
     question: str
 class AskPdf(BaseModel):
-    document_id : str
+    conversation_id : str
     question: str
 
