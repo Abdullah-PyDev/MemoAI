@@ -23,12 +23,12 @@ const apiClient = axios.create({
  */
 export async function createConversation(): Promise<string> {
   try {
-    const response = await apiClient.post('/new-conversations');
+    const response = await apiClient.post('/-conversations');
 
     return response.data.conversation_id;
   } catch (error) {
     console.error(
-      `[MemoAI API] Could not create conversation at ${API_BASE_URL}/new-conversations.`,
+      `[MemoAI API] Could not create conversation at ${API_BASE_URL}/-conversations.`,
       error
     );
 
