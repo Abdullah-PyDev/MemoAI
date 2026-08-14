@@ -7,15 +7,18 @@ export const Home: React.FC = () => {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const {
-    currentDocument,
-    messages,
-    isUploading,
-    uploadError,
-    isAsking,
-    handleUpload,
-    handleAskQuestion,
-    handleClearChat,
-  } = usePDFChat();
+  currentDocument,
+  messages,
+  isUploading,
+  uploadError,
+  isAsking,
+  isCreatingConversation,
+  conversationError,
+  handleNewChat,
+  handleUpload,
+  handleAskQuestion,
+  handleClearChat,
+} = usePDFChat();
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-white text-zinc-900 font-sans antialiased">
@@ -26,6 +29,9 @@ export const Home: React.FC = () => {
         isUploading={isUploading}
         uploadError={uploadError}
         onClearChat={handleClearChat}
+        onNewChat={handleNewChat}
+        isCreatingConversation={isCreatingConversation}
+        conversationError={conversationError}
         hasMessages={messages.length > 0}
         isOpenMobile={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}

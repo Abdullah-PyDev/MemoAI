@@ -13,6 +13,9 @@ interface SidebarProps {
   isUploading: boolean;
   uploadError: string | null;
   onClearChat: () => void;
+  onNewChat: () => void;
+  isCreatingConversation: boolean;
+  conversationError: string | null;
   hasMessages: boolean;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
@@ -24,6 +27,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isUploading,
   uploadError,
   onClearChat,
+  onNewChat,
+  isCreatingConversation,
+  conversationError,
   hasMessages,
   isOpenMobile = false,
   onCloseMobile,
@@ -44,9 +50,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         <div className="flex flex-col gap-5 overflow-y-auto pr-1 custom-scrollbar">
+
           {/* Header & Mobile Close */}
           <div className="flex items-center justify-between">
             <Logo />
+
             {onCloseMobile && (
               <button
                 onClick={onCloseMobile}
@@ -55,6 +63,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <X className="w-5 h-5" />
               </button>
+            )}
+          </div>
+
+          {/* New Chat */}
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={onNewChat}
+              disabled={isCreatingConversation}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              <span>
+                {isCreatingConversation ? 'Starting New Chat...' : 'New Chat'}
+              </span>
+            </button>
+
+            {conversationError && (
+              <p className="text-[11px] text-red-600 bg-red-50 border border-red-200/60 p-2 rounded-xl text-center">
+                {conversationError}
+              </p>
             )}
           </div>
 
