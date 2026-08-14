@@ -5,6 +5,7 @@ from app.routes.upload import router as upload_pdf
 from app.routes.ask_pdf import router as ask_pdf
 from app.routes.transcribe import router as transcribe_pdf
 from app.routes.system import router as system_route
+from app.routes.conversation import router as conversation_route
 # Load environment
 load_dotenv()
 # FastAPI app
@@ -26,4 +27,4 @@ app.include_router(system_route)
 app.include_router(upload_pdf)
 app.include_router(ask_pdf)
 app.include_router(transcribe_pdf)
-
+app.include_router(conversation_route)
