@@ -5,11 +5,15 @@ from app.services.pdf_parser import PdfParser
 from app.rag.cache import save_document
 from app.db.db import database
 from app.services.pdf_parser import parser
+from app.validatefile import validate_pdf
+
 router = APIRouter()
 
 @router.post("/upload")
 async def upload_pdf(conversation_id:str,file: UploadFile = File(...)):
     
+    validate_pdf(file.filename)
+
     pdf_bytes = await file.read()
 
     document = parser.parse_pdf(pdf_bytes)
