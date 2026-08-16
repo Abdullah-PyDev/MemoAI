@@ -1,44 +1,41 @@
 # MemoAI
 
-## Architecture
-
-![MemoAI Architecture](assets/architecture.png)
-
-
-
-# MemoAI
-
-An AI-powered PDF Assistant built with FastAPI, Streamlit, RAG (Retrieval-Augmented Generation), FAISS, Sentence Transformers, and the Groq API.
-
-Upload any PDF and ask natural language questions. MemoAI retrieves the most relevant sections of the document using semantic search before generating an accurate answer with an LLM.
+An AI-powered document assistant that lets you upload PDFs, ask natural language questions, transcribe audio, and maintain conversation history with intelligent retrieval-augmented generation (RAG).
 
 ---
 
 ## ✨ Features
 
-- 📄 Upload PDF documents
-- 💬 Ask questions about uploaded PDFs
-- 🧠 Retrieval-Augmented Generation (RAG)
-- 🔍 Semantic search using Sentence Transformers
-- ⚡ Fast vector similarity search with FAISS
-- 🤖 AI responses powered by Groq
-- 🌐 FastAPI backend
-- 🎨 Streamlit frontend
-- 💭 Conversation history support
+- 📄 **Upload & Process PDFs** - Upload PDF documents for analysis
+- 💬 **Ask Questions** - Ask natural language questions about document content
+- 🎤 **Audio Transcription** - Transcribe audio files to text
+- 🧠 **Retrieval-Augmented Generation (RAG)** - Intelligent context retrieval for accurate answers
+- 💭 **Conversation History** - Maintain multi-turn conversations with context awareness
+- 🚀 **Fast & Scalable** - Built with FastAPI for high performance
 
 ---
 
 ## 🛠 Tech Stack
 
-- Python
+**Backend:**
+- Python 3
 - FastAPI
-- Streamlit
-- Groq API
-- Sentence Transformers
-- FAISS
-- PyPDF
-- Pydantic
-- NumPy
+- FAISS (vector similarity search)
+- Sentence Transformers (embeddings)
+- PyPDF (PDF parsing)
+- Google Genai (LLM)
+
+**Frontend:**
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS
+- Axios (HTTP client)
+- React Markdown
+
+**Storage:**
+- File-based document storage
+- Vector database caching
 
 ---
 
@@ -48,169 +45,282 @@ Upload any PDF and ask natural language questions. MemoAI retrieves the most rel
 MemoAI/
 │
 ├── app/
-│   ├── core/
-│   ├── db/
-│   ├── models/
-│   ├── rag/
-│   ├── services/
-│   └── main.py
+│   ├── core/               # Core prompts and configurations
+│   ├── db/                 # Database and storage layer
+│   ├── models/             # Data models and schemas
+│   ├── rag/                # RAG pipeline and caching
+│   ├── routes/             # API endpoints
+│   │   ├── upload.py       # PDF upload endpoint
+│   │   ├── ask_pdf.py      # Query answering endpoint
+│   │   ├── transcribe.py   # Audio transcription endpoint
+│   │   ├── conversation.py # Conversation management
+│   │   └── system.py       # System endpoints
+│   ├── services/           # Business logic services
+│   └── main.py             # FastAPI application
 │
-├── frontend/
-│   └── app.py
+├── frontend/               # React + TypeScript frontend
+│   ├── src/
+│   │   ├── components/     # React components
+│   │   ├── pages/          # Page components
+│   │   ├── services/       # API service clients
+│   │   ├── hooks/          # Custom React hooks
+│   │   ├── types/          # TypeScript type definitions
+│   │   ├── App.tsx
+│   │   └── main.tsx
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── tsconfig.json
 │
-├── tests/
+├── storage/                # Document and conversation storage
+├── archive/                # Archived/legacy code
+├── docs/                   # Documentation
+├── assets/                 # Static assets
 │
-├── requirements.txt
-├── .env
+├── requirements.txt        # Python dependencies
+├── .env                    # Environment variables
 ├── .gitignore
 └── README.md
 ```
 
 ---
 
-# Installation
+# Installation & Setup
 
-## 1. Clone the repository
+## Backend Setup
 
-```bash
-git clone https://github.com/YOUR_USERNAME/MemoAI.git
-cd MemoAI
-```
+### 1. Create a virtual environment
 
----
-
-## 2. Create a virtual environment
-
-Windows
-
+**Windows:**
 ```bash
 python -m venv .venv
 ```
 
-Activate it
+Activate it:
 
-Command Prompt
-
+**Command Prompt:**
 ```bash
 .venv\Scripts\activate
 ```
 
-PowerShell
-
+**PowerShell:**
 ```powershell
 .venv\Scripts\Activate.ps1
 ```
 
----
+**macOS/Linux:**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
 
-## 3. Install dependencies
+### 2. Install Python dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
----
+### 3. Configure environment variables
 
-## 4. Create a `.env` file
-
-Inside the project root create a file named
-
-```
-.env
-```
-
-Add your Groq API key
+Create a `.env` file in the project root:
 
 ```env
 GROQ_API_KEY=your_api_key_here
 ```
 
----
-
-## 5. Start the FastAPI backend
+### 4. Start the FastAPI backend
 
 ```bash
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Backend will run at
+The backend will be available at:
+- **API:** http://127.0.0.1:8000
+- **API Documentation:** http://127.0.0.1:8000/docs
+- **Alternative Docs:** http://127.0.0.1:8000/redoc
 
-```
-http://127.0.0.1:8000
-```
+## Frontend Setup
 
-API documentation
-
-```
-http://127.0.0.1:8000/docs
-```
-
----
-
-## 6. Start the Streamlit frontend
-
-Open a new terminal and run
+### 1. Navigate to frontend directory
 
 ```bash
-streamlit run frontend/app.py
+cd frontend
 ```
 
-The application will open automatically in your browser.
+### 2. Install Node dependencies
 
----
-
-# How it Works
-
+```bash
+npm install
 ```
-PDF Upload
-      │
-      ▼
-Extract Text
-      │
-      ▼
-Character Overlap Chunking
-      │
-      ▼
-Sentence Transformer Embeddings
-      │
-      ▼
-FAISS Vector Index
-      │
-      ▼
-Semantic Retrieval
-      │
-      ▼
-Prompt Construction
-      │
-      ▼
-Groq LLM
-      │
-      ▼
-AI Response
+
+### 3. Start the development server
+
+```bash
+npm run dev
+```
+
+The frontend will be available at http://localhost:3000
+
+### 4. Build for production
+
+```bash
+npm run build
 ```
 
 ---
 
-## Future Improvements
+## 🚀 Usage
 
-- SQLite database
-- Persistent vector database (ChromaDB)
-- Multi-document support
-- Source citations
-- OCR for scanned PDFs
-- Hybrid search (BM25 + Vector Search)
-- Docker deployment
-- Authentication
+1. **Start the backend** - Run the FastAPI server (see Backend Setup step 4)
+2. **Start the frontend** - Run the Vite dev server (see Frontend Setup step 3)
+3. **Upload a PDF** - Use the frontend to upload a PDF document
+4. **Ask Questions** - Query the document using natural language
+5. **Transcribe Audio** - Upload audio files for transcription
+6. **View History** - Access your conversation history
 
 ---
 
-## Author
+## 📡 API Endpoints
 
-**Abdullah Shafiq**
+- `POST /upload` - Upload a PDF document
+- `POST /ask` - Ask a question about an uploaded document
+- `POST /transcribe` - Transcribe audio to text
+- `GET /conversation/<id>` - Retrieve conversation history
+- `POST /conversation` - Create a new conversation
 
-BS Artificial Intelligence  
-FAST National University of Computer and Emerging Sciences
+---
 
-GitHub: https://github.com/Abdullah-PyDev
+## 🔧 Configuration
 
+### Environment Variables
 
+Key environment variables that can be configured in `.env`:
+
+```env
+# Google Genai API
+GOOGLE_API_KEY=your_api_key_here
+
+# Server Configuration
+SERVER_HOST=0.0.0.0
+SERVER_PORT=8000
+
+# Frontend Configuration
+REACT_APP_API_URL=http://localhost:8000
+```
+
+---
+
+## 🔄 How It Works
+
+### Document Processing Pipeline
+
+```
+1. PDF Upload
+       │
+       ▼
+2. Extract Text Content
+       │
+       ▼
+3. Split into Chunks
+       │
+       ▼
+4. Generate Embeddings (Sentence Transformers)
+       │
+       ▼
+5. Store in FAISS Vector Index
+       │
+       ▼
+6. Cache for Fast Retrieval
+```
+
+### Query Processing Pipeline
+
+```
+1. User Question
+       │
+       ▼
+2. Generate Question Embedding
+       │
+       ▼
+3. Search FAISS Index (Semantic Search)
+       │
+       ▼
+4. Retrieve Relevant Document Chunks
+       │
+       ▼
+5. Build Context with Chat History
+       │
+       ▼
+6. Construct Prompt
+       │
+       ▼
+7. Query Google Genai LLM
+       │
+       ▼
+8. Return AI Response
+```
+
+---
+
+## 🎯 Features in Detail
+
+### PDF Processing
+- Extracts text from PDFs with accurate page tracking
+- Maintains document metadata
+- Stores raw content for context
+
+### Semantic Search
+- Uses Sentence Transformers for embeddings
+- FAISS for efficient vector similarity search
+- Retrieves most relevant document sections
+
+### Conversation Management
+- Maintains multi-turn conversation history
+- Includes chat context in prompts for coherent responses
+- Supports multiple concurrent conversations
+
+### Audio Transcription
+- Transcribes audio files to text
+- Temporary file handling for security
+- Supports multiple audio formats
+
+---
+
+## 🐛 Troubleshooting
+
+### Backend Issues
+
+**Port already in use:**
+```bash
+# Use a different port
+uvicorn app.main:app --reload --port 8001
+```
+
+**Module not found errors:**
+- Ensure virtual environment is activated
+- Run `pip install -r requirements.txt` again
+
+### Frontend Issues
+
+**Cannot connect to backend:**
+- Verify backend is running on http://localhost:8000
+- Check CORS configuration in `app/main.py`
+- Update API URL in frontend configuration if needed
+
+**Port 3000 already in use:**
+```bash
+npm run dev -- --port 3001
+```
+
+---
+
+## 📝 License
+
+This project is open source and available under the MIT License.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit pull requests or open issues for bugs and feature requests.
+
+---
