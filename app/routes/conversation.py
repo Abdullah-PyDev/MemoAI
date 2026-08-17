@@ -63,3 +63,15 @@ def update_conversation_title(conversation_id: str, title: str):
         "conversation_id": conversation_id,
         "title": title
     }
+@router.delete("/conversations/{conversation_id}")
+def delete_conversation(conversation_id: str):
+    deleted = db.delete_conversation(conversation_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=404,
+            detail="Conversation not found"
+        )
+    return {
+        "message": "Conversation deleted successfully",
+        "conversation_id": conversation_id
+    }

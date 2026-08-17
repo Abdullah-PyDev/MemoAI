@@ -17,6 +17,7 @@ class Database:
         self.create_tables()
         print("Database Connected")
     def create_tables(self):
+        self.cursor.execute("PRAGMA foreign_keys = ON")
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS documents (
                 id TEXT PRIMARY KEY,
@@ -28,41 +29,31 @@ class Database:
 
         """)
         self.cursor.execute("""
-            CREATE TABLE IF NOT EXISTS chat_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                document_id TEXT NOT NULL,
-                question TEXT NOT NULL,
-                answer TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (document_id) REFERENCES documents(id)
+        CREATE TABLE IF NOT EXISTS conversations (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            active_document_id TEXT
         )
-        
         """)
         self.cursor.execute("""
-            CREATE TABLE IF NOT EXISTS conversations (
-                id TEXT PRIMARY KEY,
-                title TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        CREATE TABLE IF NOT EXISTS chat_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            conversation_id TEXT,
+            document_id TEXT NOT NULL,
+            question TEXT NOT NULL,
+            answer TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+            FOREIGN KEY (conversation_id)
+                REFERENCES conversations(id)
+                ON DELETE CASCADE,
+
+            FOREIGN KEY (document_id)
+                REFERENCES documents(id)
         )
         """)
-        self.cursor.execute("PRAGMA table_info(chat_history)")
-        columns = [column[1] for column in self.cursor.fetchall()]
-
-        if "conversation_id" not in columns:
-            self.cursor.execute("""
-                ALTER TABLE chat_history
-                ADD COLUMN conversation_id TEXT
-            """)
-        self.cursor.execute("PRAGMA table_info(conversations)")
-        columns = [column[1] for column in self.cursor.fetchall()]
-        
-        if "active_document_id" not in columns:
-            self.cursor.execute("""
-                ALTER TABLE conversations
-                ADD COLUMN active_document_id TEXT
-            """)
-
         self.connection.commit()
     def store_document(self,document_id,filename,pages,text):
         self.cursor.execute("""
@@ -202,4 +193,12 @@ class Database:
             history_text += f"Assistant: {chat['answer']}\n\n"
 
         return history_text
+    def delete_conversation(self,conversation_id):
+        self.cursor.execute("""
+                DELETE FROM conversations
+                WHERE id = ?
+               """,(conversation_id,))
+        self.connection.commit()
+        #return true if conversation deleted
+        return self.cursor.rowcount > 0
 database = Database()

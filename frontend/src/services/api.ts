@@ -13,46 +13,70 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
+export async function createConversation() {
+  const response = await axios.post(
+    'http://localhost:8000/conversations'
+  );
 
+  return response.data;
+}
+
+
+export async function updateConversationTitle(
+  conversationId: string,
+  title: string
+) {
+  const response = await apiClient.patch(
+    `/conversations/${conversationId}/title`,
+    null,
+    {
+      params: {
+        title,
+      },
+    }
+  );
+
+  return response.data;
+}
 /**
  * Upload a PDF file to the backend
  * POST /upload
  */
-export async function uploadPDF(file: File): Promise<UploadResponse> {
+export async function uploadPDF(
+  conversationId: string,
+  file: File
+): Promise<UploadResponse> {
   const formData = new FormData();
   formData.append('file', file);
 
   try {
-    const response = await apiClient.post<UploadResponse>('/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await apiClient.post<UploadResponse>(
+      `/upload?conversation_id=${conversationId}`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+
     return response.data;
   } catch (error) {
-    console.warn(`[MemoAI API] Could not connect to ${API_BASE_URL}/upload. Using local demo fallback.`, error);
-    
-    // Fallback simulation when local FastAPI server is not active on 127.0.0.1
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    // Return a mock UUID for document_id
-    const mockDocumentId = 'doc_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
-    return {
-      document_id: mockDocumentId,
-    };
+    console.error('PDF upload failed:', error);
+    throw error;
   }
 }
-
 /**
  * Send a question about a PDF to the backend
  * POST /ask-pdf
  */
-export async function askPDF(documentId: string, question: string): Promise<AskPDFResponse> {
+export async function askPDF(conversationId: string,question: string): 
+Promise<AskPDFResponse> {
   try {
-    const response = await apiClient.post<AskPDFResponse>('/ask-pdf', {
-      document_id: documentId,
-      question: question,
-    });
+      const response = await apiClient.post<AskPDFResponse>('/ask-pdf', {
+    conversation_id: conversationId,
+    question,
+  });
     return response.data;
   } catch (error) {
     console.warn(`[MemoAI API] Could not connect to ${API_BASE_URL}/ask-pdf. Using local demo response.`, error);
