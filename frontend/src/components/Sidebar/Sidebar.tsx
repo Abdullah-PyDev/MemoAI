@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  Trash2,
-  Plus,
-  X,
-  MessageSquare,
-  MoreHorizontal,
-} from 'lucide-react';
-
+import {Trash2,Plus,X,MessageSquare,MoreHorizontal,} from 'lucide-react';
 import { Logo } from './Logo';
 import { DocumentStatus } from './DocumentStatus';
 import { AboutSection } from './AboutSection';
@@ -38,7 +31,8 @@ interface SidebarProps {
   onNewChat: () => void;
   isCreatingConversation: boolean;
   conversationError: string | null;
-
+  
+  onDeleteConversation: (id: string) => void;
   isOpenMobile?: boolean;
   onCloseMobile?: () => void;
 }
@@ -78,6 +72,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   selectedConversationId,
   onSelectConversation,
   onNewChat,
+  onDeleteConversation,
   isCreatingConversation,
   conversationError,
   isOpenMobile = false,
