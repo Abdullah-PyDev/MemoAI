@@ -13,9 +13,18 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
 export async function createConversation() {
   const response = await axios.post(
     'http://localhost:8000/conversations'
+  );
+
+  return response.data;
+}
+
+export async function deleteConversation(conversationId: string) {
+  const response = await apiClient.delete(
+    `/conversations/${conversationId}`
   );
 
   return response.data;
