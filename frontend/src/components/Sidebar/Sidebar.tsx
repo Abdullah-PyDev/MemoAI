@@ -1,5 +1,5 @@
-import React from 'react';
-import {Trash2,Plus,X,MessageSquare,MoreHorizontal,} from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Trash2, Plus, X, MessageSquare, MoreHorizontal } from 'lucide-react';
 import { Logo } from './Logo';
 import { DocumentStatus } from './DocumentStatus';
 import { AboutSection } from './AboutSection';
@@ -78,6 +78,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isOpenMobile = false,
   onCloseMobile,
 }) => {
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  
   const groupedConversations = [
     {
       key: 'today',
@@ -104,6 +107,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
       ),
     },
   ].filter((group) => group.items.length > 0);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node)
+      ) {
+        setOpenMenuId(null);
+      }
+    };
+
+    window.document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      window.document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <>
@@ -186,7 +206,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       return (
                         <div
                           key={conversation.id}
-                          className="group relative flex items-center"
+                          className={`group relative flex items-center ${
+                            openMenuId === conversation.id ? 'z-50' : 'z-0'
+                          }`}
                         >
                           {/* Conversation */}
                           <button
@@ -208,13 +230,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           </button>
 
                           {/* Conversation Options */}
-                          <button
-                            type="button"
-                            aria-label="Conversation options"
-                            className="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded-md text-zinc-400 opacity-0 group-hover:opacity-100 hover:bg-zinc-300/60 hover:text-zinc-700 transition-all"
+                          <div
+                            ref={openMenuId === conversation.id ? menuRef : null}
+                            className="absolute right-1 top-1/2 -translate-y-1/2"
                           >
-                            <MoreHorizontal className="w-3.5 h-3.5" />
-                          </button>
+                            <button
+                              type="button"
+                              aria-label="Conversation options"
+                              onClick={(e) => {
+                                e.stopPropagation();
+
+                                setOpenMenuId((current) =>
+                                  current === conversation.id ? null : conversation.id
+                                );
+                              }}
+                              className="p-1 rounded-md text-zinc-400 opacity-0 group-hover:opacity-100 hover:bg-zinc-300/60 hover:text-zinc-700 transition-all"
+                            >
+                              <MoreHorizontal className="w-3.5 h-3.5" />
+                            </button>
+
+                            {openMenuId === conversation.id && (
+                              <div className="absolute right-0 top-full mt-1 z-50 w-28 rounded-lg border border-zinc-200 bg-white p-1 shadow-lg">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    onDeleteConversation(conversation.id);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+
+                                  <span>Delete</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
