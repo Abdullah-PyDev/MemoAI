@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { usePDFChat } from '../hooks/usePDFChat';
 import { Sidebar, ConversationInfo } from '../components/Sidebar/Sidebar';
 import { ChatArea } from '../components/Chat/ChatArea';
-import { createConversation } from '../services/api';
-
+import { createConversation, deleteConversation } from '../services/api';
 
 
 
@@ -109,6 +108,7 @@ export const Home: React.FC = () => {
       {
         id: newConversationId,
         title: 'New Conversation',
+        createdAt: new Date().toISOString(),
         updatedAt: 'today',
       },
       ...prev,
@@ -117,6 +117,22 @@ export const Home: React.FC = () => {
     console.error('Failed to create new conversation:', error);
   }
 };
+
+const handleDeleteConversation = async (id: string) => {
+    try {
+      await deleteConversation(id);
+
+      setConversations((prev) =>
+        prev.filter((conversation) => conversation.id !== id)
+      );
+
+      if (selectedConversationId === id) {
+        setSelectedConversationId(null);
+      }
+    } catch (error) {
+      console.error('Failed to delete conversation:', error);
+    }
+  };
 
   const handleSelectConversation = async (id: string) => {
     setSelectedConversationId(id);
@@ -141,6 +157,7 @@ export const Home: React.FC = () => {
         selectedConversationId={selectedConversationId}
         onSelectConversation={handleSelectConversation}
         onNewChat={handleNewChat}
+        onDeleteConversation={handleDeleteConversation}
       />
 
       {/* Main Container - offset by 320px on desktop */}
