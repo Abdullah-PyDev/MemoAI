@@ -70,7 +70,7 @@ flowchart LR
         SVC[Services]
         RAG[RAG Pipeline]
         IDX[(FAISS Index Cache)]
-        STORE[(File Storage)]
+        DB[(SQLite)]
     end
 
     LLM[Groq API]
@@ -79,7 +79,7 @@ flowchart LR
     API --> SVC
     SVC --> RAG
     RAG <--> IDX
-    SVC <--> STORE
+    SVC <--> DB
     RAG -- prompt + retrieved context --> LLM
     LLM -- answer --> RAG
 ```
@@ -109,7 +109,7 @@ Question  ->  embed  ->  FAISS similarity search  ->  top-k chunks
 | **Retrieval** | FAISS (vector search), Sentence Transformers (embeddings), PyPDF (parsing) |
 | **LLM** | Groq API (low-latency LLM inference), model: `[your-model-name]` |
 | **Frontend** | React 19, TypeScript, Vite, Tailwind CSS, Axios, React Markdown |
-| **Storage** | File-based document and conversation storage, cached vector indexes |
+| **Database** | SQLite (documents and conversation history), FAISS indexes cached on disk |
 
 ---
 
@@ -120,6 +120,7 @@ Question  ->  embed  ->  FAISS similarity search  ->  top-k chunks
 - **FAISS over a hosted vector DB:** runs in-process with zero infrastructure, which is ideal for a single-node app and keeps setup to one command. [Add: what you'd switch to at scale, e.g. pgvector or Qdrant.]
 - **Groq for generation:** fast inference keeps answers responsive, and the LLM sits behind a single service layer, so swapping providers means changing one module. [Add: why you chose Groq and which model.]
 - **Local embeddings (Sentence Transformers):** no per-request embedding cost and documents never leave the machine for the embedding step.
+- **SQLite for persistence:** a zero-config, file-based relational database that stores documents and conversation history, so chats survive restarts without running a separate database server. [Add: ORM or raw `sqlite3`, if relevant.]
 - **Cached indexes:** re-embedding on every question would be slow and wasteful, so each document's index is built once and reused.
 - **Layered backend (`routes` -> `services` -> `rag`):** keeps HTTP concerns separate from business logic and retrieval, so each piece can be tested and replaced independently.
 
@@ -207,7 +208,7 @@ curl -X POST http://localhost:8000/ask \
 MemoAI/
 ├── app/                    # FastAPI backend
 │   ├── core/               # Prompts and configuration
-│   ├── db/                 # Storage layer
+│   ├── db/                 # SQLite database layer
 │   ├── models/             # Data models and schemas
 │   ├── rag/                # RAG pipeline and caching
 │   ├── routes/             # API endpoints (upload, ask_pdf, transcribe, conversation, system)
@@ -225,7 +226,7 @@ MemoAI/
 
 Being upfront about trade-offs:
 
-- File-based storage is simple but not suited to multi-user, multi-instance deployment
+- SQLite is ideal for a single-node app but not for multiple app instances or heavy concurrent writes
 - Scanned (image-only) PDFs are not supported without OCR
 - No authentication yet
 
@@ -235,7 +236,7 @@ Being upfront about trade-offs:
 - [ ] Automated tests and CI (GitHub Actions)
 - [ ] Docker Compose for one-command setup
 - [ ] Authentication and per-user document isolation
-- [ ] Swap file storage for PostgreSQL + pgvector
+- [ ] Migrate from SQLite to PostgreSQL (with pgvector) for multi-user deployment
 - [ ] Streaming responses
 
 ---
